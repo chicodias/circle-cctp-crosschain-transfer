@@ -33,6 +33,12 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
   SupportedChainId,
   SUPPORTED_CHAINS,
   CHAIN_TO_CHAIN_NAME,
@@ -41,6 +47,7 @@ import { ProgressSteps } from "@/components/progress-step";
 import { TransferLog } from "@/components/transfer-log";
 import { Timer } from "@/components/timer";
 import { TransferTypeSelector } from "@/components/transfer-type";
+import { RebalancingDemo } from "@/components/rebalancing-demo";
 
 export default function Home() {
   const { currentStep, logs, error, executeTransfer, getBalance, reset } =
@@ -99,123 +106,153 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
-      <Card className="max-w-3xl mx-auto">
-        <CardHeader>
-          <CardTitle className="text-center">
-            Crosschain USDC Transfer
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label>Transfer Type</Label>
-            <TransferTypeSelector
-              value={transferType}
-              onChange={setTransferType}
-            />
-            <p className="text-sm text-muted-foreground">
-              {transferType === "fast"
-                ? "Faster transfers with lower finality threshold (1000 blocks)"
-                : "Standard transfers with higher finality (2000 blocks)"}
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Source Chain</Label>
-              <Select
-                value={String(sourceChain)}
-                onValueChange={(value) => setSourceChain(Number(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select source chain" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SUPPORTED_CHAINS.map((chainId) => (
-                    <SelectItem key={chainId} value={String(chainId)}>
-                      {CHAIN_TO_CHAIN_NAME[chainId]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <div className="max-w-3xl mx-auto mb-6">
+        <h1 className="text-4xl font-bold text-center mb-2">
+          Circle CCTP Demo
+        </h1>
+        <p className="text-center text-muted-foreground">
+          Cross-Chain Transfer Protocol for USDC
+        </p>
+      </div>
 
-            <div className="space-y-2">
-              <Label>Destination Chain</Label>
-              <Select
-                value={String(destinationChain)}
-                onValueChange={(value) => setDestinationChain(Number(value))}
-                disabled={!sourceChain}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select destination chain" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SUPPORTED_CHAINS.filter(
-                    (chainId) => chainId !== sourceChain,
-                  ).map((chainId) => (
-                    <SelectItem key={chainId} value={String(chainId)}>
-                      {CHAIN_TO_CHAIN_NAME[chainId]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+      <Tabs defaultValue="rebalancing" className="max-w-3xl mx-auto">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="rebalancing">
+            Elastic Liquidity Rebalancing
+          </TabsTrigger>
+          <TabsTrigger value="manual">Manual Transfer</TabsTrigger>
+        </TabsList>
 
-          <div className="space-y-2">
-            <Label>Amount (USDC)</Label>
-            <Input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Enter amount"
-              min="0"
-              max={parseFloat(balance)}
-              step="any"
-            />
-            <p className="text-sm text-muted-foreground">{balance} available</p>
-          </div>
+        <TabsContent value="rebalancing">
+          <RebalancingDemo />
+        </TabsContent>
 
-          <div className="text-center">
-            {showFinalTime ? (
-              <div className="text-2xl font-mono">
-                <span>
-                  {Math.floor(elapsedSeconds / 60)
-                    .toString()
-                    .padStart(2, "0")}
-                </span>
-                :
-                <span>{(elapsedSeconds % 60).toString().padStart(2, "0")}</span>
+        <TabsContent value="manual">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-center">
+                Manual Crosschain USDC Transfer
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label>Transfer Type</Label>
+                <TransferTypeSelector
+                  value={transferType}
+                  onChange={setTransferType}
+                />
+                <p className="text-sm text-muted-foreground">
+                  {transferType === "fast"
+                    ? "Faster transfers with lower finality threshold (1000 blocks)"
+                    : "Standard transfers with higher finality (2000 blocks)"}
+                </p>
               </div>
-            ) : (
-              <Timer
-                isRunning={isTransferring}
-                initialSeconds={elapsedSeconds}
-                onTick={setElapsedSeconds}
-              />
-            )}
-          </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Source Chain</Label>
+                  <Select
+                    value={String(sourceChain)}
+                    onValueChange={(value) => setSourceChain(Number(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select source chain" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUPPORTED_CHAINS.map((chainId) => (
+                        <SelectItem key={chainId} value={String(chainId)}>
+                          {CHAIN_TO_CHAIN_NAME[chainId]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-          <ProgressSteps currentStep={currentStep} />
+                <div className="space-y-2">
+                  <Label>Destination Chain</Label>
+                  <Select
+                    value={String(destinationChain)}
+                    onValueChange={(value) =>
+                      setDestinationChain(Number(value))
+                    }
+                    disabled={!sourceChain}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select destination chain" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUPPORTED_CHAINS.filter(
+                        (chainId) => chainId !== sourceChain,
+                      ).map((chainId) => (
+                        <SelectItem key={chainId} value={String(chainId)}>
+                          {CHAIN_TO_CHAIN_NAME[chainId]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-          <TransferLog logs={logs} />
-          {error && <div className="text-red-500 text-center">{error}</div>}
-          <div className="flex justify-center gap-4">
-            <Button
-              onClick={handleStartTransfer}
-              disabled={isTransferring || currentStep === "completed"}
-            >
-              {currentStep === "completed"
-                ? "Transfer Complete"
-                : "Start Transfer"}
-            </Button>
-            {(currentStep === "completed" || currentStep === "error") && (
-              <Button variant="outline" onClick={handleReset}>
-                Reset
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              <div className="space-y-2">
+                <Label>Amount (USDC)</Label>
+                <Input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  min="0"
+                  max={parseFloat(balance)}
+                  step="any"
+                />
+                <p className="text-sm text-muted-foreground">
+                  {balance} available
+                </p>
+              </div>
+
+              <div className="text-center">
+                {showFinalTime ? (
+                  <div className="text-2xl font-mono">
+                    <span>
+                      {Math.floor(elapsedSeconds / 60)
+                        .toString()
+                        .padStart(2, "0")}
+                    </span>
+                    :
+                    <span>
+                      {(elapsedSeconds % 60).toString().padStart(2, "0")}
+                    </span>
+                  </div>
+                ) : (
+                  <Timer
+                    isRunning={isTransferring}
+                    initialSeconds={elapsedSeconds}
+                    onTick={setElapsedSeconds}
+                  />
+                )}
+              </div>
+
+              <ProgressSteps currentStep={currentStep} />
+
+              <TransferLog logs={logs} />
+              {error && <div className="text-red-500 text-center">{error}</div>}
+              <div className="flex justify-center gap-4">
+                <Button
+                  onClick={handleStartTransfer}
+                  disabled={isTransferring || currentStep === "completed"}
+                >
+                  {currentStep === "completed"
+                    ? "Transfer Complete"
+                    : "Start Transfer"}
+                </Button>
+                {(currentStep === "completed" || currentStep === "error") && (
+                  <Button variant="outline" onClick={handleReset}>
+                    Reset
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

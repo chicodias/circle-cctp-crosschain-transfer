@@ -961,6 +961,113 @@ export function useCrossChainTransfer() {
     }
   };
 
+  const executeRebalancing = async (
+    sourceChainId: number,
+    destinationChainId: number,
+    amount: string
+  ) => {
+    try {
+      // Step 1: Demand Spike Detection
+      addLog("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      addLog("🔍 STEP 1: DEMAND SPIKE DETECTION");
+      addLog("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      addLog("Monitoring liquidity pools across chains...");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      addLog(`⚠️  High demand detected on Arc Testnet: ${amount} USDC needed`);
+      addLog("Demand level: 🔴 CRITICAL");
+
+      // Step 2: Identify Excess Liquidity
+      addLog("");
+      addLog("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      addLog("💰 STEP 2: IDENTIFY EXCESS LIQUIDITY");
+      addLog("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      addLog("Scanning chains for available capital...");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      addLog(`✅ Excess liquidity found on Ethereum Sepolia: ${amount} USDC`);
+      addLog(`Rebalancing decision: Transfer ${amount} USDC from Ethereum → Arc`);
+
+      const numericAmount = parseUnits(amount, DEFAULT_DECIMALS);
+
+      // Get clients (for rebalancing demo, we only use EVM chains)
+      const sourceClient = getClients(sourceChainId) as WalletClient<HttpTransport, Chain, Account>;
+      const destinationClient = getClients(destinationChainId) as WalletClient<HttpTransport, Chain, Account>;
+
+      // Get destination address
+      const destinationPrivateKey = getPrivateKeyForChain(destinationChainId);
+      const account = privateKeyToAccount(
+        `0x${destinationPrivateKey.replace(/^0x/, "")}`
+      );
+      const defaultDestination = account.address;
+
+      // Step 3: Burn & Attest
+      addLog("");
+      addLog("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      addLog("🔥 STEP 3: BURN & ATTEST");
+      addLog("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+      // Approve
+      setCurrentStep("approving");
+      addLog("Approving USDC for CCTP TokenMessenger...");
+      await approveUSDC(sourceClient, sourceChainId);
+
+      // Burn
+      setCurrentStep("burning");
+      addLog(`Initiating CCTP burn on Ethereum Sepolia for ${amount} USDC...`);
+      const burnTx = await burnUSDC(
+        sourceClient,
+        sourceChainId,
+        numericAmount,
+        destinationChainId,
+        defaultDestination,
+        "fast"
+      );
+      addLog("✅ USDC successfully burned on Ethereum");
+
+      // Retrieve attestation
+      setCurrentStep("waiting-attestation");
+      addLog("Waiting for Circle attestation service...");
+      const attestation = await retrieveAttestation(burnTx, sourceChainId);
+      addLog("✅ Attestation received and validated by Circle");
+
+      // Step 4: Mint on Destination
+      addLog("");
+      addLog("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      addLog("💎 STEP 4: MINT & DEPLOY");
+      addLog("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+      // Check destination chain balance
+      const minBalance = parseEther("0.01");
+      const publicClient = createPublicClient({
+        chain: chains[destinationChainId as keyof typeof chains],
+        transport: http(),
+      });
+      const balance = await publicClient.getBalance({
+        address: account.address,
+      });
+
+      if (balance < minBalance) {
+        throw new Error("Insufficient native token for gas fees on Arc");
+      }
+
+      setCurrentStep("minting");
+      addLog(`Minting native USDC on Arc Testnet...`);
+      await mintUSDC(destinationClient, destinationChainId, attestation);
+
+      addLog("");
+      addLog("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      addLog("✨ REBALANCING COMPLETE");
+      addLog("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      addLog(`✅ Successfully rebalanced ${amount} USDC from Ethereum to Arc`);
+      addLog("Capital is now deployed on Arc to meet liquidity demand");
+      addLog("Elastic liquidity rebalancing demonstration complete!");
+    } catch (error) {
+      setCurrentStep("error");
+      addLog(
+        `❌ Rebalancing Error: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  };
+
   const reset = () => {
     setCurrentStep("idle");
     setLogs([]);
@@ -972,6 +1079,7 @@ export function useCrossChainTransfer() {
     logs,
     error,
     executeTransfer,
+    executeRebalancing,
     getBalance,
     reset,
   };

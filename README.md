@@ -1,6 +1,26 @@
 # CCTP Sample App
 
-This sample application demonstrates Cross-Chain Transfer Protocol (CCTP) step-by-step capabilities on testnet networks. The app showcases CCTP functionality across multiple testnets:
+This sample application demonstrates Cross-Chain Transfer Protocol (CCTP) capabilities on testnet networks, including:
+
+1. **Elastic Liquidity Rebalancing Demo** - An automated simulation demonstrating how capital follows demand across chains using CCTP
+2. **Manual Cross-Chain Transfers** - Step-by-step USDC transfers across multiple testnets
+
+## Features
+
+### Elastic Liquidity Rebalancing
+
+The rebalancing demo simulates a real-world use case where USDC liquidity automatically rebalances between chains based on demand:
+
+- **Demand Spike Detection**: Monitors liquidity demand on Arc Testnet
+- **Identify Excess**: Identifies excess USDC on Ethereum Sepolia
+- **Burn & Attest**: Burns USDC on Ethereum via CCTP and validates attestation through Circle
+- **Mint**: Mints native USDC on Arc to meet liquidity demand
+
+This demonstrates how CCTP enables elastic liquidity that can dynamically reposition capital across chains in response to market conditions.
+
+### Supported Testnets
+
+The app showcases CCTP functionality across multiple testnets:
 
 - Arc Testnet
 - Ethereum Sepolia
